@@ -1,3 +1,4 @@
+from .image_utils import validate_upload
 from decimal import Decimal
 
 from rest_framework import serializers
@@ -12,8 +13,12 @@ NEPAL_LON = (Decimal('80.0'), Decimal('88.3'))
 class SitePhotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = SitePhoto
-        fields = ('id', 'image', 'photo_type', 'caption', 'uploaded_at')
-        read_only_fields = fields
+        fields = ('id', 'site', 'image', 'thumbnail', 'photo_type',
+                  'caption', 'uploaded_at')
+        read_only_fields = ('thumbnail', 'uploaded_at')
+
+    def validate_image(self, value):
+        return validate_upload(value)
 
 
 class SiteSerializer(serializers.ModelSerializer):

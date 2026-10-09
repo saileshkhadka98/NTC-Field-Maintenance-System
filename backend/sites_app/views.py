@@ -1,11 +1,13 @@
 from django.db.models import Count, ProtectedError
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, mixins, status, viewsets
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
-from accounts.permissions import AdminWriteElseRead
+from accounts.permissions import AdminWriteElseRead, StaffWriteAdminDelete
+from config.utils import int_param
 
-from .models import Site
-from .serializers import SiteSerializer
+from .models import Site, SitePhoto
+from .serializers import SitePhotoSerializer, SiteSerializer
 
 
 class SiteViewSet(viewsets.ModelViewSet):
@@ -40,3 +42,25 @@ class SiteViewSet(viewsets.ModelViewSet):
                 {'detail': 'This site has maintenance records and cannot be deleted.'},
                 status=status.HTTP_409_CONFLICT,
             )
+
+
+class SitePhotoViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    serializer_class = SitePhotoSerializer
+    permission_classes = [StaffWriteAdminDelete]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        qs = SitePhoto.objects.select_related('site')
+        site_id = int_param(self.request, 'site')
+        if site_id is not None:
+            qs = qs.filter(site_id=site_id)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(uploaded_by=self.request.user)

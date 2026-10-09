@@ -1,8 +1,9 @@
-from rest_framework.routers import DefaultRouter
+from rest_framework.routers import SimpleRouter
 
-from .views import SiteViewSet
+from .views import SitePhotoViewSet, SiteViewSet
 
-router = DefaultRouter()
+router = SimpleRouter()
 router.register('sites', SiteViewSet, basename='site')
+router.register('site-photos', SitePhotoViewSet, basename='site-photo')
 
 urlpatterns = router.urls

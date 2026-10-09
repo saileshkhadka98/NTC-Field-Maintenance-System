@@ -37,3 +37,31 @@ class StaffWriteElseRead(BasePermission):
         if request.method in SAFE_METHODS:
             return True
         return role in ('admin', 'technician')
+
+
+class StaffWriteAdminDelete(BasePermission):
+    """Read: any logged-in user. Create/edit: admin or technician. Delete: admin."""
+
+    def has_permission(self, request, view):
+        role = get_role(request)
+        if role is None:
+            return False
+        if request.method in SAFE_METHODS:
+            return True
+        if request.method == 'DELETE':
+            return role == 'admin'
+        return role in ('admin', 'technician')
+
+
+class StaffCreateAdminModify(BasePermission):
+    """Read: any logged-in user. Create: admin or technician. Edit/delete: admin."""
+
+    def has_permission(self, request, view):
+        role = get_role(request)
+        if role is None:
+            return False
+        if request.method in SAFE_METHODS:
+            return True
+        if request.method == 'POST':
+            return role in ('admin', 'technician')
+        return role == 'admin'

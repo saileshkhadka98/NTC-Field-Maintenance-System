@@ -1,3 +1,4 @@
+from .image_utils import process_image
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -76,6 +77,9 @@ class SitePhoto(models.Model):
         Site, on_delete=models.CASCADE, related_name='photos'
     )
     image = models.ImageField(upload_to='site_photos/%Y/%m/')
+    thumbnail = models.ImageField(
+        upload_to='site_photos/thumbs/%Y/%m/', blank=True, editable=False
+    )
     photo_type = models.CharField(
         max_length=20, choices=PhotoType.choices, default=PhotoType.SURROUNDINGS
     )
@@ -88,6 +92,15 @@ class SitePhoto(models.Model):
 
     class Meta:
         ordering = ['-uploaded_at']
+
+    def save(self, *args, **kwargs):
+        # A newly uploaded file is resized and gets a thumbnail, whether it
+        # came from the API or from the admin site.
+        if self.image and not self.image._committed:
+            full, thumb = process_image(self.image.file)
+            self.image.save(full.name, full, save=False)
+            self.thumbnail.save(thumb.name, thumb, save=False)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.site.site_code} - {self.get_photo_type_display()}'
